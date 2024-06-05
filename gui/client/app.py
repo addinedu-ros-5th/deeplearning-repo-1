@@ -1,13 +1,11 @@
 import streamlit as st
 import requests
 import time
-import base64
 import cv2
+import pandas as pd
 
 from http import HTTPStatus
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from ultralytics import YOLO
-from utils.yoloProcess import YOLOProcessor
 from datetime import datetime
 
 class Page:
@@ -105,12 +103,19 @@ class Page:
     def admin_page(self):
         st.set_page_config(page_title='Park Management', page_icon='images/favicon.ico', layout='wide', initial_sidebar_state='expanded')
         st.title('Park Management System')
-        self.pages = { 'CCTV': self.cctv_page, 'LOG': self.log_page }
-        page = st.sidebar.selectbox('Select Page', list(self.pages.keys()))
+        self.pages = { 'LOG': self.log_page, 'CCTV': self.cctv_page }
+        page = st.sidebar.selectbox('선택', list(self.pages.keys()))
         self.pages[page]()
     
     def cctv_page(self):
         st.subheader("CCTV")
+        sidebar_cols = st.sidebar.columns(2)
+        with sidebar_cols[0]:
+            st.date_input('시작일', disabled=True)
+        with sidebar_cols[1]:
+            st.date_input('종료일', disabled=True)
+        st.sidebar.multiselect('필터', options=['A'], placeholder="선택해주세요.", disabled=True)
+        st.sidebar.button('적용', use_container_width=True, disabled=True)
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
@@ -121,8 +126,8 @@ class Page:
             self.upload_video()
 
     @st.cache_resource
-    def load_model(self, model_path):
-        model = YOLO(model_path)
+    def load_model(_self, _model_path):
+        model = YOLO(_model_path)
         return model
     
     def cctv1(self, video_path):
@@ -148,15 +153,6 @@ class Page:
                     if not banner_detected:
                         banner_detected = True
                         banner_start_time = datetime.now()
-            if banner_detected:
-                banner_end_time = datetime.now()
-                st.info(f"Banner detected from {banner_start_time.strftime('%Y-%m-%d %H:%M:%S')} to {banner_end_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                banner_detected = False
-                # if banner_detected:
-                #     banner_duration = banner_end_time - banner_start_time
-                #     minutes, seconds = divmod(banner_duration.total_seconds(), 60)
-                #     st.info(f"Banner detected for {int(minutes)} minutes and {int(seconds)} seconds")
-                #     banner_detected = False  # 다음 인식을 위해 초기화
             frame_window.image(frame, channels='BGR')
         cap.release()
         
@@ -174,10 +170,32 @@ class Page:
     def log_page(self):
         sidebar_cols = st.sidebar.columns(2)
         with sidebar_cols[0]:
-            st.date_input('시작일',)
+            start_date = st.date_input('시작일')
         with sidebar_cols[1]:
-            st.date_input('종료일')
-        st.sidebar.button('적용', use_container_width=True)
+            end_date = st.date_input('종료일')
+        self.option = st.sidebar.multiselect('필터', ['A', 'B', '흡연', '쓰레기무단투기', '현수막', '음주'], max_selections=3, placeholder="선택해주세요.")
+        st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date))
+
+        layouts = st.columns([4, 6])
+        with layouts[0]:
+            st.write('내역')
+            self.log_layout = st.container(height=600, border=True)
+        with layouts[1]:
+            st.write('영상')
+            self.video_layout = st.container(height=600, border=True)
+
+    def apply(self, start_date, end_date):
+        params = {'start_date': str(start_date), 'end_date': str(end_date)}
+        response = requests.post(st.secrets.address.address + '/log/download', json=params)
+        log = response.json()
+
+        df = pd.DataFrame(log, columns=['날짜', '구역', '시작시간', '종료시간', '행위'])
+        df = df.set_index('날짜')
+        with self.log_layout:
+            st.dataframe(df, use_container_width=True, on_select=self.clip)
+
+    def clip(self):
+        pass
 
     def run(self):
         if st.session_state.page == 'sign_in':
