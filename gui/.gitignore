@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL / IDE files
+*/__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Private files
+.secret/
+.venv/
+.streamlit/
+
+# Video files
+videos/
