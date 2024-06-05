@@ -33,14 +33,19 @@ def upload():
     except:
         return Response(None, status=HTTPStatus.EXPECTATION_FAILED)
 
+
+# 필터 기능 구현 남음
 @log.route('/download', methods=['POST'])
 def download():
+    data = request.json
+    start_date = data.get('start_date')
+    end_date = data.get('end_date')
     try:
         conn = connection()
         cursor = conn.cursor()
 
-        query = 'SELECT * FROM action_data'
-        cursor.execute(query)
+        query = 'SELECT date, section, start_time, end_time, action FROM log_data WHERE date BETWEEN %s AND %s'
+        cursor.execute(query, (start_date, end_date))
         result = cursor.fetchall()
         
         cursor.close()
