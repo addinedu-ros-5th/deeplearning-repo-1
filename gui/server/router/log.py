@@ -6,13 +6,10 @@ from http import HTTPStatus
 
 log = Blueprint('log', __name__)
 
-
-# Log upload
 @log.route('/upload', methods=['POST'])
 def upload():
     data = request.json
     date = data.get('date')
-    time = data.get('time')
     section = data.get('section')
     start_time = data.get('start_time')
     end_time = data.get('end_time')
@@ -25,8 +22,8 @@ def upload():
         conn = connection()
         cursor = conn.cursor()
 
-        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'
-        cursor.execute(query, (date, time, section, start_time, end_time, 
+        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'
+        cursor.execute(query, (date, section, start_time, end_time, 
                                video_path, video_width, video_height, action))
         conn.commit()
         
@@ -36,7 +33,6 @@ def upload():
     except:
         return Response(None, status=HTTPStatus.EXPECTATION_FAILED)
 
-# Log download
 @log.route('/download', methods=['POST'])
 def download():
     try:
@@ -49,6 +45,6 @@ def download():
         
         cursor.close()
         conn.close()
-        return Response(json.dumps(result), mimetype='application/json', status=HTTPStatus.OK)
+        return Response(json.dumps(result, default=str), mimetype='application/json', status=HTTPStatus.OK)
     except:
         return Response(None, status=HTTPStatus.EXPECTATION_FAILED)
