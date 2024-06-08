@@ -1,14 +1,13 @@
 import streamlit as st
 import requests
 import time
-import base64
 import cv2
 import os
+import pandas as pd
+import glob
 
 from http import HTTPStatus
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from ultralytics import YOLO
-from utils.yoloProcess import YOLOProcessor
 from datetime import datetime, timedelta
 
 class Page:
@@ -29,8 +28,8 @@ class Page:
             with title_cols[2]:
                 st.header('로그인')
 
-            hide_menu_style = '<style>[data-testid="InputInstructions"] { display:None } </style>'
-            st.markdown(hide_menu_style, unsafe_allow_html=True)
+            hide_style = '<style> [data-testid="InputInstructions"] { display:None } </style>'
+            st.markdown(hide_style, unsafe_allow_html=True)
             input_id = st.text_input(label='아이디', max_chars=20, placeholder='아이디를 입력해주세요.', autocomplete=None)
             input_password = st.text_input(label='비밀번호', max_chars=20, type='password', placeholder='비밀번호를 입력해주세요.', autocomplete=None)
 
@@ -50,8 +49,8 @@ class Page:
             with title_cols[2]:
                 st.header('회원가입')
 
-            hide_menu_style = '<style>[data-testid="InputInstructions"] { display:None } </style>'
-            st.markdown(hide_menu_style, unsafe_allow_html=True)
+            hide_style = '<style> [data-testid="InputInstructions"] { display:None } </style>'
+            st.markdown(hide_style, unsafe_allow_html=True)
             user_name = st.text_input(label='이름', max_chars=10, placeholder='이름을 입력해주세요.', autocomplete='')
             user_id = st.text_input(label='아이디', max_chars=20, placeholder='아이디를 입력해주세요.', autocomplete='')
             user_password = st.text_input(label='비밀번호', type='password', max_chars=20, placeholder='비밀번호를 입력해주세요.', autocomplete='')
@@ -106,21 +105,74 @@ class Page:
     def admin_page(self):
         st.set_page_config(page_title='Park Management', page_icon='images/favicon.ico', layout='wide', initial_sidebar_state='expanded')
         st.title('Park Management System')
-        self.pages = {  'LOG': self.log_page, 'CCTV': self.cctv_page, }
+        self.pages = { 'LOG': self.log_page, 'CCTV': self.cctv_page }
         page = st.sidebar.selectbox('Select Page', list(self.pages.keys()))
         self.pages[page]()
-    
 
     def cctv_page(self):
         st.subheader("CCTV")
+        sidebar_cols = st.sidebar.columns(2)
+        with sidebar_cols[0]:
+            st.date_input('시작일', disabled=True)
+        with sidebar_cols[1]:
+            st.date_input('종료일', disabled=True)
+        st.sidebar.multiselect('필터', ['A', '흡연', '투기', '음주'], default=None, placeholder='선택해주세요.', disabled=True)
+        st.sidebar.button('적용', use_container_width=True, disabled=True)
+
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
-            cctv1_path = "/home/kjy/Downloads/test.mp4"
+            cctv1_path = "videos/test.mp4"
             self.cctv1(cctv1_path)
         with tabs[1]:
             st.header('CCTV 추가')
             self.upload_video()
+
+    def log_page(self):
+        sidebar_cols = st.sidebar.columns(2)
+        with sidebar_cols[0]:
+            start_date = st.date_input('시작일')
+        with sidebar_cols[1]:
+            end_date = st.date_input('종료일')
+        st.sidebar.multiselect('필터', ['A', '흡연', '투기', '음주'], default=None, placeholder='선택해주세요.')
+        st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date))
+
+        layouts = st.columns([4, 6])
+
+        with layouts[0]:
+            st.subheader("LOG")
+            self.log = st.container(height=900, border=True)
+        with layouts[1]:
+            st.subheader("VIDEO")
+            self.video = st.container(height=900, border=True)
+
+        with self.log:
+            if 'df' in st.session_state:
+                event = st.dataframe(st.session_state.df, selection_mode='single-row', key='log', use_container_width=True, on_select='rerun')
+                with self.video:
+                    row = event.selection['rows']
+                    if len(row) > 0:
+                        file_name = st.session_state.df.index[row[0]]
+                        st.video(self.find_file(file_name)[0])
+
+    def apply(self, start_date, end_date):
+        if 'df' in st.session_state:
+            st.session_state.pop('df')
+
+        data = {'start_date': str(start_date), 'end_date': str(end_date)}
+
+        response = requests.post(st.secrets.address.address + '/log/download', json=data)
+
+        log_data = response.json()
+
+        log_df = pd.DataFrame(log_data, columns=['날짜', '구역', '시작시간', '종료시간', '행위'])
+        log_df = log_df.set_index(keys='날짜')
+
+        st.session_state.df = log_df
+
+    def find_file(self, file_name):
+        return glob.glob(f'videos/{file_name}.mp4', recursive=True)
+            
 
     # def model_paths(self):
     #     model_paths = {
@@ -156,7 +208,7 @@ class Page:
         saving = False
         frame_count = 0
 
-        save_dir = "/home/kjy/Downloads/saved_videos"
+        save_dir = "videos/"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
             
@@ -210,7 +262,7 @@ class Page:
                         banner_detected = True
                         banner_start_time = datetime.now()
 
-                        video_file = os.path.join(save_dir, f"detected_banner_{banner_start_time.strftime('%Y%m%d_%H%M%S')}.avi")
+                        video_file = os.path.join(save_dir, f"detected_banner_{banner_start_time.strftime('%Y-%m-%d_%H%M%S')}.avi")
                         out = cv2.VideoWriter(video_file, fourcc, 20.0, (frame_width, frame_height))
                         if not out.isOpened():
                             st.error("Error: Failed to open video writer")
@@ -224,7 +276,7 @@ class Page:
                         trash_detected = True
                         trash_start_time = datetime.now()
 
-                        video_file = os.path.join(save_dir, f"detected_trash_{trash_start_time.strftime('%Y%m%d_%H%M%S')}.avi")
+                        video_file = os.path.join(save_dir, f"detected_trash_{trash_start_time.strftime('%Y-%m-%d_%H%M%S')}.avi")
                         out = cv2.VideoWriter(video_file, fourcc, 20.0, (frame_width, frame_height))
                         if not out.isOpened():
                             st.error("Error: Failed to open video writer")
@@ -277,14 +329,6 @@ class Page:
         st.subheader('CCTV')
         video_bytes = uploaded_file.read()
         st.video(video_bytes)
-        
-    def log_page(self):
-        sidebar_cols = st.sidebar.columns(2)
-        with sidebar_cols[0]:
-            st.date_input('시작일',)
-        with sidebar_cols[1]:
-            st.date_input('종료일')
-        st.sidebar.button('적용', use_container_width=True)
 
     def run(self):
         if st.session_state.page == 'sign_in':
