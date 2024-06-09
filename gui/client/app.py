@@ -7,8 +7,9 @@ import pandas as pd
 import glob
 
 from http import HTTPStatus
-from ultralytics import YOLO
 from datetime import datetime, timedelta
+from utils.model import load_model
+from utils.file import find_file
 
 class Page:
     def __init__(self):
@@ -122,7 +123,7 @@ class Page:
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
-            cctv1_path = "videos/test.mp4"
+            cctv1_path = "videos/2024-01-01_123020.mp4"
             self.cctv1(cctv1_path)
         with tabs[1]:
             st.header('CCTV 추가')
@@ -155,7 +156,7 @@ class Page:
                     row = event.selection['rows']
                     if len(row) > 0:
                         file_name = st.session_state.df.index[row[0]]
-                        st.video(self.find_file(file_name)[0])
+                        st.video(find_file(file_name)[0])
 
     def apply(self, start_date, end_date, sections=None, actions=None):
         if 'df' in st.session_state:
@@ -171,14 +172,6 @@ class Page:
         log_df = log_df.set_index(keys='날짜')
 
         st.session_state.df = log_df
-
-    def find_file(self, file_name):
-        return glob.glob(f'videos/{file_name}_*.mp4', recursive=True)
-
-    @st.cache_resource
-    def load_model(_self, _model_path):
-        model = YOLO(_model_path)
-        return model
     
     def cctv1(self, video_path):
         banner_detected = False
@@ -189,9 +182,9 @@ class Page:
         trash_start_time = None
         trash_end_time = None
 
-        model1 = self.load_model('models/best.pt')
-        model2 = self.load_model('models/best (1).pt')
-        model3 = self.load_model('models/yolov8n-pose.pt')
+        model1 = load_model('models/best.pt')
+        model2 = load_model('models/best (1).pt')
+        model3 = load_model('models/yolov8n-pose.pt')
 
         cap = cv2.VideoCapture(video_path)
         frame_window = st.image([])
@@ -210,7 +203,7 @@ class Page:
             if not ret:
                 break
             
-            fixed_size = (640, 480)
+            fixed_size = (1280, 720)
             frame = cv2.resize(frame, fixed_size)
             frame_height, frame_width = frame.shape[:2]
 
