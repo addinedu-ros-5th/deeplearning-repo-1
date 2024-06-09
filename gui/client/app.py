@@ -105,7 +105,7 @@ class Page:
     def admin_page(self):
         st.set_page_config(page_title='Park Management', page_icon='images/favicon.ico', layout='wide', initial_sidebar_state='expanded')
         st.title('Park Management System')
-        self.pages = { 'LOG': self.log_page, 'CCTV': self.cctv_page }
+        self.pages = { 'RECORDS': self.log_page, 'CCTV': self.cctv_page }
         page = st.sidebar.selectbox('Select Page', list(self.pages.keys()))
         self.pages[page]()
 
@@ -129,21 +129,23 @@ class Page:
             self.upload_video()
 
     def log_page(self):
+        st.subheader("RECORDS")
         sidebar_cols = st.sidebar.columns(2)
         with sidebar_cols[0]:
             start_date = st.date_input('시작일')
         with sidebar_cols[1]:
             end_date = st.date_input('종료일')
-        st.sidebar.multiselect('필터', ['A', '흡연', '투기', '음주'], default=None, placeholder='선택해주세요.')
-        st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date))
+        section = st.sidebar.multiselect('구역', ['A'], default=None, placeholder='선택해주세요.')
+        action = st.sidebar.multiselect('행위', ['흡연', '투기', '음주'], default=None, placeholder='선택해주세요.')
+        st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date, section, action))
 
         layouts = st.columns([4, 6])
 
         with layouts[0]:
-            st.subheader("LOG")
+            st.write("LOG")
             self.log = st.container(height=900, border=True)
         with layouts[1]:
-            st.subheader("VIDEO")
+            st.write("VIDEO")
             self.video = st.container(height=900, border=True)
 
         with self.log:
@@ -155,11 +157,11 @@ class Page:
                         file_name = st.session_state.df.index[row[0]]
                         st.video(self.find_file(file_name)[0])
 
-    def apply(self, start_date, end_date):
+    def apply(self, start_date, end_date, sections=None, actions=None):
         if 'df' in st.session_state:
             st.session_state.pop('df')
 
-        data = {'start_date': str(start_date), 'end_date': str(end_date)}
+        data = {'start_date': str(start_date), 'end_date': str(end_date), 'sections': sections , 'actions': actions}
 
         response = requests.post(st.secrets.address.address + '/log/download', json=data)
 
@@ -171,16 +173,7 @@ class Page:
         st.session_state.df = log_df
 
     def find_file(self, file_name):
-        return glob.glob(f'videos/{file_name}.mp4', recursive=True)
-            
-
-    # def model_paths(self):
-    #     model_paths = {
-    #         '모델 1': '/home/kjy/Downloads/streamlit-community-main/client/models/best.pt',
-    #         '모델 2': '/home/kjy/Downloads/streamlit-community-main/client/models/best (1).pt',
-    #         '모델 3': '/home/kjy/Downloads/streamlit-community-main/client/models/yolov8n-pose.pt'
-    #     }
-    #     return model_paths
+        return glob.glob(f'videos/{file_name}_*.mp4', recursive=True)
 
     @st.cache_resource
     def load_model(_self, _model_path):
