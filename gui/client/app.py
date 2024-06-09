@@ -4,7 +4,6 @@ import time
 import cv2
 import os
 import pandas as pd
-import glob
 
 from http import HTTPStatus
 from datetime import datetime, timedelta
