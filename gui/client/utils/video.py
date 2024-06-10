@@ -1,28 +1,27 @@
 import os
 import cv2
-import streamlit as st
-import numpy as np
-
-from tensorflow.keras.models import load_model
-from utils.model import load_yolo_model
-from datetime import datetime, timedelta
-import threading
 import time
-from ultralytics import YOLO
-from queue import Queue
+import threading
+import numpy as np
+import streamlit as st
 import concurrent.futures
+
+from queue import Queue
+from utils.model import load_yolo_model
+from utils.model import load_keras_model
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 
 model1 = load_yolo_model('models/best_last.pt')
 model2 = load_yolo_model('models/yolov8n-pose.pt')
-model3 = load_model('models/lstm_model.keras')
+model3 = load_keras_model('models/lstm_model.keras')
 
 sequence_length = 3
 sequence = []
 count = 0
 
-video_path = '/home/kjy/dev_ws/git_ws/deeplearning-repo-1/gui/client/videos/2024-01-01_123020.mp4'
+video_path = 'videos/2024-01-01_123020.mp4'
 
 def preprocess_frame(frame):
     results = model2(frame, conf=0.8)
