@@ -1,14 +1,14 @@
-import streamlit as st
-import requests
-import time
-import cv2
 import os
+import cv2
+import time
+import requests
 import pandas as pd
+import streamlit as st
 
 from http import HTTPStatus
-from datetime import datetime, timedelta
-from utils.model import load_model
 from utils.file import find_file
+from utils.model import load_model
+from datetime import datetime, timedelta
 
 class Page:
     def __init__(self):
@@ -105,7 +105,7 @@ class Page:
     def admin_page(self):
         st.set_page_config(page_title='Park Management', page_icon='images/favicon.ico', layout='wide', initial_sidebar_state='expanded')
         st.title('Park Management System')
-        self.pages = { 'RECORDS': self.log_page, 'CCTV': self.cctv_page }
+        self.pages = { 'RECORD': self.record_page, 'CCTV': self.cctv_page }
         page = st.sidebar.selectbox('Select Page', list(self.pages.keys()))
         self.pages[page]()
 
@@ -128,8 +128,8 @@ class Page:
             st.header('CCTV 추가')
             self.upload_video()
 
-    def log_page(self):
-        st.subheader("RECORDS")
+    def record_page(self):
+        st.subheader('RECORD')
         sidebar_cols = st.sidebar.columns(2)
         with sidebar_cols[0]:
             start_date = st.date_input('시작일')
@@ -142,11 +142,15 @@ class Page:
         layouts = st.columns([4, 6])
 
         with layouts[0]:
-            st.write("LOG")
-            self.log = st.container(height=900, border=True)
+            st.write('LOG')
+            self.log = st.container(border=True)
+            with self.log:
+                st.empty()
         with layouts[1]:
-            st.write("VIDEO")
-            self.video = st.container(height=900, border=True)
+            st.write('VIDEO')
+            self.video = st.container(border=True)
+            with self.video:
+                st.empty()
 
         with self.log:
             if 'df' in st.session_state:
