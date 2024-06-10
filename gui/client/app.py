@@ -7,7 +7,7 @@ import streamlit as st
 
 from http import HTTPStatus
 from utils.file import find_file
-from utils.model import load_model
+from utils.model import load_yolo_model
 from datetime import datetime, timedelta
 
 class Page:
@@ -185,9 +185,9 @@ class Page:
         trash_start_time = None
         trash_end_time = None
 
-        model1 = load_model('models/best.pt')
-        model2 = load_model('models/best (1).pt')
-        model3 = load_model('models/yolov8n-pose.pt')
+        model1 = load_yolo_model('models/best.pt')
+        model2 = load_yolo_model('models/best (1).pt')
+        model3 = load_yolo_model('models/yolov8n-pose.pt')
 
         cap = cv2.VideoCapture(video_path)
         frame_window = st.image([])
