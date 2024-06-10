@@ -10,4 +10,5 @@
 .streamlit/
 
 # Video files
-videos/
+videos/*
+!videos/readme.txt
