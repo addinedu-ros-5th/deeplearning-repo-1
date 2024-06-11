@@ -11,15 +11,14 @@ def upload():
     data = request.json
     date = data.get('date')
     section = data.get('section')
-    start_time = data.get('start_time')
     action = data.get('action')
 
     try:
         conn = connection()
         cursor = conn.cursor()
 
-        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s)'
-        cursor.execute(query, (date, section, start_time, action))
+        query = 'INSERT INTO log_data () VALUES (%s, %s, %s)'
+        cursor.execute(query, (date, section, action))
         conn.commit()
         
         cursor.close()
@@ -41,7 +40,7 @@ def download():
         cursor = conn.cursor()
 
         parameters = [start_date, end_date]
-        query = 'SELECT date, section, start_time, end_time, action FROM log_data WHERE date BETWEEN %s AND %s'
+        query = 'SELECT date, section, action FROM log_data WHERE date BETWEEN %s AND %s'
         if len(sections) > 0:
             query += " AND section IN (" + ", ".join(["%s"] * len(sections)) + ")"
             parameters.extend(sections)
