@@ -166,7 +166,7 @@ class Page:
         if 'df' in st.session_state:
             st.session_state.pop('df')
 
-        data = {'start_date': str(start_date), 'sections': sections , 'actions': actions}
+        data = {'start_date': str(start_date), 'end_date': str(end_date), 'sections': sections, 'actions': actions}
 
         response = requests.post(st.secrets.address.address + '/log/download', json=data)
 
