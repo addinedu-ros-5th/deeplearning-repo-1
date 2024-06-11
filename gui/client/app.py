@@ -172,8 +172,8 @@ class Page:
 
         log_data = response.json()
 
-        log_df = pd.DataFrame(log_data, columns=['날짜', '구역', '시작시간', '행위'])
-        log_df = log_df.set_index(keys='날짜')
+        log_df = pd.DataFrame(log_data, columns=['날짜 / 시간', '구역', '행위'])
+        log_df = log_df.set_index(keys='날짜 / 시간')
 
         st.session_state.df = log_df
 
