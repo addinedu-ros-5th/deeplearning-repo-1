@@ -132,8 +132,8 @@ class Page:
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
-            cctv1_path = "videos/2024-01-01_123020.mp4"
-            process(cctv1_path)
+            with st.empty():
+                process()
         with tabs[1]:
             st.header('CCTV 추가')
             self.upload_video()
