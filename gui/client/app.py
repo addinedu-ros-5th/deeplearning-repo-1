@@ -112,7 +112,7 @@ class Page:
             with sidebar_cols[1]:
                 end_date = st.date_input('종료일')
             section = st.sidebar.multiselect('구역', ['A'], default=None, placeholder='선택해주세요.')
-            action = st.sidebar.multiselect('행위', ['흡연', '투기', '음주'], default=None, placeholder='선택해주세요.')
+            action = st.sidebar.multiselect('행위', ['현수막', '무단 투기'], default=None, placeholder='선택해주세요.')
             st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date, section, action))
         elif page == 'CCTV':
             sidebar_cols = st.sidebar.columns(2)
@@ -121,7 +121,7 @@ class Page:
             with sidebar_cols[1]:
                 st.date_input('종료일', disabled=True)
             st.sidebar.multiselect('구역', ['A'], default=None, placeholder='선택해주세요.', disabled=True)
-            st.sidebar.multiselect('행위', ['A', '흡연', '투기', '음주'], default=None, placeholder='선택해주세요.', disabled=True)
+            st.sidebar.multiselect('행위', ['현수막', '무단 투기'], default=None, placeholder='선택해주세요.', disabled=True)
             st.sidebar.button('적용', use_container_width=True, on_click=lambda: self.apply(start_date, end_date, section, action), disabled=True)
 
         self.pages[page]()
@@ -132,7 +132,8 @@ class Page:
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
-            process()
+            with st.empty():
+                process()
         with tabs[1]:
             st.header('CCTV 추가')
             self.upload_video()
