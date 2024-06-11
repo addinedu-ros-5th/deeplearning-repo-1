@@ -190,7 +190,7 @@ def frame_processor(stop_event):
                             video_file = os.path.join(save_dir, f"banner_{banner_detected_time.strftime('%Y-%m-%d_%H:%M:%S')}.avi")
                             output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
                         output_video_writer.write(blended_frame)
-                        log_data = {'date': banner_detected_time, 'section': "A",  'action' : "현수막"}
+                        log_data = {'date': banner_detected_time.strftime('%Y년%m월%d일 %H시 %M분 %S초'), 'section': "A",  'action' : "현수막"}
                         requests.post(st.secrets.address.address + '/log/upload', json=log_data)
                 else:
                     saving = False
