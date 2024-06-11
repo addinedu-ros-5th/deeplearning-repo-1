@@ -27,6 +27,7 @@ result_queue = Queue(maxsize=10)
 flag_queue = Queue(maxsize=10)
 
 banner_detected_time = None
+trash_detected_time = None
 
 save_dir = "videos/"
 
@@ -161,6 +162,7 @@ def frame_processor(stop_event):
     global saving
     global banner_detected_time
     global output_video_writer
+    global trash_detected_time
     output_video_writer = None
     person_flags = []
 
@@ -183,6 +185,11 @@ def frame_processor(stop_event):
                     banner_detected_time = datetime.now()
                     saving = True
 
+                if "holding_trash" in person_flags and not saving:
+                    flag_queue.put("trash_person_detected")
+                    trash_detected_time = datetime.now()
+                    saving = True
+
                 if saving and banner_detected_time is not None:
                     elapsed_time = (datetime.now() - banner_detected_time).total_seconds()
                     if elapsed_time <= 30:
@@ -195,9 +202,24 @@ def frame_processor(stop_event):
                 else:
                     saving = False
                     banner_detected_time = None
+
+                if saving and trash_detected_time is not None:
+                    elapsed_time = (datetime.now() - trash_detected_time).total_seconds()
+                    if elapsed_time <= 30:
+                        if output_video_writer is None:
+                            video_file = os.path.join(save_dir, f"banner_{trash_detected_time.strftime('%Y-%m-%d_%H:%M:%S')}.avi")
+                            output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
+                        output_video_writer.write(blended_frame)
+                        log_data = {'date': trash_detected_time.strftime('%Y년%m월%d일 %H시 %M분 %S초'), 'section': "A",  'action' : "무단 투기"}
+                        requests.post(st.secrets.address.address + '/log/upload', json=log_data)
+                else:
+                    saving = False
+                    trash_detected_time = None
+
                     if output_video_writer is not None:
                         output_video_writer.release()
                         output_video_writer = None
+
                 if result_queue.full():
                     result_queue.get()
                 result_queue.put(blended_frame)
