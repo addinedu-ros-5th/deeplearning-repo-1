@@ -13,12 +13,15 @@ object_model = load_yolo_model('models/best_last.pt')
 # Sequence length setting
 sequence_length = 10
 sequence = []
+<<<<<<< HEAD
 start_save_time = None
 saving_duration = 30
 saving = False
 frame_queue = Queue(maxsize=10)
 result_queue = Queue(maxsize=10)
 flag_queue = Queue(maxsize=10)
+=======
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
 # Frame preprocessing function
 def preprocess_frame(frame):
     results = pose_model(frame, conf = 0.8)
@@ -133,7 +136,10 @@ def frame_reader(stop_event):
         frame_queue.put(frame)
         time.sleep(frame_time)
     cap.release()
+<<<<<<< HEAD
     stop_event.set()
+=======
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
 def frame_processor(stop_event):
     global saving
     person_flags = []
@@ -163,7 +169,11 @@ def frame_processor(stop_event):
                 if result_queue.full():
                     result_queue.get()
                 result_queue.put(blended_frame)
+<<<<<<< HEAD
     stop_event.set()
+=======
+
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
 def process():
     # Start threads
     stop_event = threading.Event()
@@ -171,6 +181,10 @@ def process():
     processor_thread = threading.Thread(target=frame_processor, args=(stop_event,))
     reader_thread.start()
     processor_thread.start()
+<<<<<<< HEAD
+=======
+    # Set screen switching interval
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
     frame_count = 0
     while not stop_event.is_set():
         if not result_queue.empty():
@@ -180,10 +194,13 @@ def process():
             frame_count += 1
         else:
             time.sleep(0.01)
+<<<<<<< HEAD
         if not flag_queue.empty():
             flag = flag_queue.get()
             if flag == "banner_person_detected":
                 st.toast("배너를 감지했습니다!")
+=======
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
     stop_event.set()
     reader_thread.join()
     processor_thread.join()

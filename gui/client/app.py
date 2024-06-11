@@ -132,7 +132,12 @@ class Page:
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
+<<<<<<< HEAD
             process()
+=======
+            with st.empty():
+                process()
+>>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
         with tabs[1]:
             st.header('CCTV 추가')
             self.upload_video()
