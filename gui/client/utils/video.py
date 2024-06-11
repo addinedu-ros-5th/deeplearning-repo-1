@@ -2,15 +2,16 @@ import threading
 import time
 import numpy as np
 import cv2
+import os
 import streamlit as st
 from queue import Queue
 import concurrent.futures
 from utils.model import load_yolo_model, load_keras_model
-# Load models
+from datetime import datetime
+
 pose_model = load_yolo_model('models/yolov8n-pose.pt')
 lstm_model = load_keras_model('models/lstm_model.keras')
 object_model = load_yolo_model('models/best_last.pt')
-# Sequence length setting
 sequence_length = 10
 sequence = []
 start_save_time = None
@@ -19,22 +20,21 @@ saving = False
 frame_queue = Queue(maxsize=10)
 result_queue = Queue(maxsize=10)
 flag_queue = Queue(maxsize=10)
-# Frame preprocessing function
+banner_detected_time = None
+save_dir = "videos/"
 def preprocess_frame(frame):
     results = pose_model(frame, conf = 0.8)
     if not results or not results[0].keypoints or len(results[0].keypoints.xy[0]) == 0:
         keypoints_flat = np.zeros(34)
     else:
         keypoints = results[0].keypoints.xy
-        keypoints = keypoints[0].cpu().numpy()  # Convert tensor to NumPy array
+        keypoints = keypoints[0].cpu().numpy()
         keypoints_flat = keypoints.flatten()
     return keypoints_flat
-# Check for overlapping bounding boxes
 def is_overlapping(box1, box2):
     x1_min, y1_min, x1_max, y1_max = box1
     x2_min, y2_min, x2_max, y2_max = box2
     return not (x1_max < x2_min or x1_min > x2_max or y1_max < y2_min or y1_min > y2_max)
-# Frame prediction function with model 1
 def predict_with_model1(frame):
     person_boxes = []
     action = None
@@ -45,7 +45,7 @@ def predict_with_model1(frame):
     if len(sequence) == sequence_length:
         input_sequence = np.expand_dims(np.array(sequence), axis=0)
         prediction = lstm_model.predict(input_sequence)
-        predicted_label = np.argmax(prediction, axis=1).flatten()[0]  # Use softmax for multi-class prediction
+        predicted_label = np.argmax(prediction, axis=1).flatten()[0]
         if predicted_label == 2:
             action = 'Trash'
         elif predicted_label == 3:
@@ -56,37 +56,32 @@ def predict_with_model1(frame):
             action = 'default'
         else:
             action = 'default'
-        # cv2.putText(frame, f'Action: {action}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    # Extract coordinates of bounding boxes of human objects (no color setting)
     results = pose_model(frame, conf=0.8)
     for result in results:
         if result.boxes is not None:
             for box in result.boxes.xyxy:
                 person_boxes.append(box.tolist())
     return frame, person_boxes, action
-# Frame prediction function with model 2
 def predict_with_model2(frame, person_boxes, person_flags, action):
     results = object_model(frame, conf=0.8)
     for result in results:
         for box in result.boxes:
-            cls = int(box.cls)  # Class label
+            cls = int(box.cls)
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-            # Draw rectangle around detected object
             label = object_model.names[cls]
-            color = (0, 255, 0)  # Green for other objects
+            color = (0, 255, 0)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-            if cls == 3:  # garbage_bag
+            if cls == 3:
                 for i, person_box in enumerate(person_boxes):
                     if is_overlapping([x1, y1, x2, y2], person_box) and action == 'Trash':
                         person_flags[i] = "holding_trash"
                         break
-            elif cls == 0:  # banner
+            elif cls == 0:
                 for i, person_box in enumerate(person_boxes):
                     if is_overlapping([x1, y1, x2, y2], person_box) and action == 'Banner':
                         person_flags[i] = "near_banner"
                         break
-    # Set person flags to yellow if action is 'Trash' or 'Banner' and not holding trash or near banner
     for i in range(len(person_flags)):
         if person_flags[i] in ['holding_trash', 'near_banner']:
             continue
@@ -96,28 +91,25 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
             person_flags[i] = 'not_near_banner'
         elif action == 'default':
             person_flags[i] = 'general'
-    # Change border color according to the state of human objects
     for i, (x1, y1, x2, y2) in enumerate(person_boxes):
         x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
         if person_flags[i] == "holding_trash":
-            color = (0, 0, 255)  # Red
+            color = (0, 0, 255)
             cv2.putText(frame, "trash_person", (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         elif person_flags[i] == "near_banner":
-            color = (0, 0, 255)  # Red
+            color = (0, 0, 255)
             cv2.putText(frame, "banner_person", (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         elif person_flags[i] == "not_holding_trash":
-            color = (0, 255, 255)  # Yellow for not holding trash
+            color = (0, 255, 255)
             cv2.putText(frame, "not_holding_trash_person", (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         elif person_flags[i] == "not_near_banner":
-            color = (0, 255, 255)  # Yellow for not near banner
+            color = (0, 255, 255)
             cv2.putText(frame, "not_near_banner_person", (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         else:
-            color = (0, 255, 0)  # Green
+            color = (0, 255, 0)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame, person_flags
-# Video path setting
 video_path = 'videos/20240603_140411.mp4'
-# Queue setting
 frame_queue = Queue(maxsize=10)
 result_queue = Queue(maxsize=10)
 def frame_reader(stop_event):
@@ -136,6 +128,9 @@ def frame_reader(stop_event):
     stop_event.set()
 def frame_processor(stop_event):
     global saving
+    global banner_detected_time
+    global output_video_writer
+    output_video_writer = None
     person_flags = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while not stop_event.is_set():
@@ -151,21 +146,27 @@ def frame_processor(stop_event):
                 blended_frame = cv2.addWeighted(result1, alpha, result2, 1 - alpha, 0)
                 if "near_banner" in person_flags and not saving:
                     flag_queue.put("banner_person_detected")
-                    start_save_time = time.time()
+                    banner_detected_time = datetime.now()
                     saving = True
-                if saving:
-                    if time.time() - start_save_time <= saving_duration:
+                if saving and banner_detected_time is not None:
+                    elapsed_time = (datetime.now() - banner_detected_time).total_seconds()
+                    if elapsed_time <= 30:
                         if output_video_writer is None:
-                            output_video_writer = cv2.VideoWriter('videos/output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
+                            video_file = os.path.join(save_dir, f"banner_{banner_detected_time.strftime('%Y-%m-%d_%H%M%S')}.avi")
+                            output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
                         output_video_writer.write(blended_frame)
-                    else:
-                        saving = False
+                else:
+                    saving = False
+                    banner_detected_time = None
+                    if output_video_writer is not None:
+                        output_video_writer.release()
+                        output_video_writer = None
                 if result_queue.full():
                     result_queue.get()
                 result_queue.put(blended_frame)
     stop_event.set()
 def process():
-    # Start threads
+    global saving
     stop_event = threading.Event()
     reader_thread = threading.Thread(target=frame_reader, args=(stop_event,))
     processor_thread = threading.Thread(target=frame_processor, args=(stop_event,))
@@ -180,10 +181,6 @@ def process():
             frame_count += 1
         else:
             time.sleep(0.01)
-        if not flag_queue.empty():
-            flag = flag_queue.get()
-            if flag == "banner_person_detected":
-                st.toast("배너를 감지했습니다!")
     stop_event.set()
     reader_thread.join()
     processor_thread.join()
