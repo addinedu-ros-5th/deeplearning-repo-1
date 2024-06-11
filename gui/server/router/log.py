@@ -10,6 +10,7 @@ log = Blueprint('log', __name__)
 def upload():
     data = request.json
     date = data.get('date')
+    time = data.get('time')
     section = data.get('section')
     action = data.get('action')
 
@@ -17,8 +18,8 @@ def upload():
         conn = connection()
         cursor = conn.cursor()
 
-        query = 'INSERT INTO log_data () VALUES (%s, %s, %s)'
-        cursor.execute(query, (date, section, action))
+        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s)'
+        cursor.execute(query, (date, time, section, action))
         conn.commit()
         
         cursor.close()
@@ -40,7 +41,7 @@ def download():
         cursor = conn.cursor()
 
         parameters = [start_date, end_date]
-        query = 'SELECT date, section, action FROM log_data WHERE date BETWEEN %s AND %s'
+        query = 'SELECT date, time, section, action FROM log_data WHERE date BETWEEN %s AND %s'
         if len(sections) > 0:
             query += " AND section IN (" + ", ".join(["%s"] * len(sections)) + ")"
             parameters.extend(sections)
