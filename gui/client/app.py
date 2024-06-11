@@ -132,12 +132,7 @@ class Page:
         tabs = st.tabs(['A구역','CCTV 구역 추가'])
         with tabs[0]:
             st.header('A구역')
-<<<<<<< HEAD
             process()
-=======
-            with st.empty():
-                process()
->>>>>>> 81d0b4d630980faf5090e851cad1aa20726f1e2c
         with tabs[1]:
             st.header('CCTV 추가')
             self.upload_video()
@@ -171,13 +166,13 @@ class Page:
         if 'df' in st.session_state:
             st.session_state.pop('df')
 
-        data = {'start_date': str(start_date), 'end_date': str(end_date), 'sections': sections , 'actions': actions}
+        data = {'start_date': str(start_date), 'sections': sections , 'actions': actions}
 
         response = requests.post(st.secrets.address.address + '/log/download', json=data)
 
         log_data = response.json()
 
-        log_df = pd.DataFrame(log_data, columns=['날짜', '구역', '시작시간', '종료시간', '행위'])
+        log_df = pd.DataFrame(log_data, columns=['날짜', '구역', '시작시간', '행위'])
         log_df = log_df.set_index(keys='날짜')
 
         st.session_state.df = log_df
