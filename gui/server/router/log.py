@@ -12,19 +12,14 @@ def upload():
     date = data.get('date')
     section = data.get('section')
     start_time = data.get('start_time')
-    end_time = data.get('end_time')
-    video_path = data.get('video_path')
-    video_width = data.get('video_width')
-    video_height = data.get('video_height')
     action = data.get('action')
 
     try:
         conn = connection()
         cursor = conn.cursor()
 
-        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'
-        cursor.execute(query, (date, section, start_time, end_time, 
-                               video_path, video_width, video_height, action))
+        query = 'INSERT INTO log_data () VALUES (%s, %s, %s, %s)'
+        cursor.execute(query, (date, section, start_time, action))
         conn.commit()
         
         cursor.close()
@@ -37,7 +32,6 @@ def upload():
 def download():
     data = request.json
     start_date = data.get('start_date')
-    end_date = data.get('end_date')
     sections = data.get('sections')
     actions = data.get('actions')
 
@@ -45,8 +39,8 @@ def download():
         conn = connection()
         cursor = conn.cursor()
 
-        parameters = [start_date, end_date]
-        query = 'SELECT date, section, start_time, end_time, action FROM log_data WHERE date BETWEEN %s AND %s'
+        parameters = [start_date]
+        query = 'SELECT date, section, start_time, action FROM log_data WHERE date BETWEEN %s AND %s'
         if len(sections) > 0:
             query += " AND section IN (" + ", ".join(["%s"] * len(sections)) + ")"
             parameters.extend(sections)
