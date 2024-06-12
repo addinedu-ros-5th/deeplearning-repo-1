@@ -120,7 +120,7 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame, person_flags
 
-video_path = 'videos/20240611_125653.mp4'
+video_path = 'videos/20240612_163507.mp4'
 
 def frame_reader(stop_event):
     cap = cv2.VideoCapture(video_path)
