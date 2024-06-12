@@ -182,8 +182,8 @@ def frame_processor(stop_event):
                                 log_time = banner_detected_time.strftime('%H%M%S')
                                 log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
                                 log_sent_banner = True
-                            elif elapsed_time_banner > 30:
-                                log_sent_banner =False
+                        elif elapsed_time_banner > 30:
+                            log_sent_banner =False
 
                         if trash_detected_time and elapsed_time_trash <= 30:
                             if not log_sent_trash:
@@ -191,8 +191,8 @@ def frame_processor(stop_event):
                                 log_time = trash_detected_time.strftime('%H%M%S')
                                 log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
                                 log_sent_trash = True
-                            elif elapsed_time_trash > 30:
-                                log_sent_trash = False
+                        elif elapsed_time_trash > 30:
+                            log_sent_trash = False
                         requests.post(st.secrets.address.address + '/log/upload', json=log_data)
                     else:
                         saving = False
