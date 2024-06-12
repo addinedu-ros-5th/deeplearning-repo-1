@@ -14,7 +14,7 @@ pose_model = load_yolo_model('models/yolov8n-pose.pt')
 lstm_model = load_keras_model('models/lstm_model.keras')
 object_model = load_yolo_model('models/best_last.pt')
 
-sequence_length = 10
+sequence_length = 100
 sequence = []
 
 saving = False
@@ -29,7 +29,7 @@ trash_detected_time = None
 save_dir = "videos/"
 
 def preprocess_frame(frame):
-    results = pose_model(frame, conf = 0.8)
+    results = pose_model(frame, conf = 0.6)
     if not results or not results[0].keypoints or len(results[0].keypoints.xy[0]) == 0:
         keypoints_flat = np.zeros(34)
     else:
@@ -64,7 +64,7 @@ def predict_with_model1(frame):
             action = 'default'
         else:
             action = 'default'
-    results = pose_model(frame, conf=0.8)
+    results = pose_model(frame, conf=0.6)
     for result in results:
         if result.boxes is not None:
             for box in result.boxes.xyxy:
@@ -72,7 +72,7 @@ def predict_with_model1(frame):
     return frame, person_boxes, action
 
 def predict_with_model2(frame, person_boxes, person_flags, action):
-    results = object_model(frame, conf=0.8)
+    results = object_model(frame)
     for result in results:
         for box in result.boxes:
             cls = int(box.cls)
@@ -120,7 +120,7 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame, person_flags
 
-video_path = 'videos/2024-06-03_140411.mp4'
+video_path = 'videos/20240611_125653.mp4'
 
 def frame_reader(stop_event):
     cap = cv2.VideoCapture(video_path)
