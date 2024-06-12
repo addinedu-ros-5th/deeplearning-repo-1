@@ -193,16 +193,7 @@ def frame_processor(stop_event):
                             elif trash_detected_time and elapsed_time_trash <= 30:
                                 video_file = os.path.join(save_dir, f"trash_{trash_detected_time.strftime('%Y-%m-%d_%H:%M:%S')}.avi")
                             output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
-                        output_video_writer.write(blended_frame)
-
-                        if banner_detected_time and elapsed_time_banner <= 30:
-                            log_date = banner_detected_time.strftime('%Y%m%d')
-                            log_time = banner_detected_time.strftime('%H%M%S')
-
-                        elif trash_detected_time and elapsed_time_trash <= 30:
-                            log_date = trash_detected_time.strftime('%Y%m%d')
-                            log_time = trash_detected_time.strftime('%H%M%S')
-                            
+                        output_video_writer.write(blended_frame)    
                     else:
                         saving = False
                         banner_detected_time = None
