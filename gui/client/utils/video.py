@@ -115,8 +115,7 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame, person_flags
 video_path = 'videos/20240603_140411.mp4'
-frame_queue = Queue(maxsize=10)
-result_queue = Queue(maxsize=10)
+
 def frame_reader(stop_event):
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -139,8 +138,8 @@ def frame_processor(stop_event):
 
     output_video_writer = None
     person_flags = []
-
-    frame_number = 300
+    log_sent_banner = False
+    log_sent_trash = False
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while not stop_event.is_set():
@@ -159,10 +158,12 @@ def frame_processor(stop_event):
                     flag_queue.put("banner_person_detected")
                     banner_detected_time = datetime.now()
                     saving = True
+                    log_sent_banner = False
                 elif "holding_trash" in person_flags and not saving:
                     flag_queue.put("trash_person_detected")
                     trash_detected_time = datetime.now()
                     saving = True
+                    log_sent_trash = False
                 if saving:
                     elapsed_time_banner = (datetime.now() - banner_detected_time).total_seconds() if banner_detected_time else float('inf')
                     elapsed_time_trash = (datetime.now() - trash_detected_time).total_seconds() if trash_detected_time else float('inf')
@@ -170,36 +171,30 @@ def frame_processor(stop_event):
                         if output_video_writer is None:
                             if banner_detected_time and elapsed_time_banner <= 30:
                                 video_file = os.path.join(save_dir, f"banner_{banner_detected_time.strftime('%Y-%m-%d_%H:%M:%S')}.avi")
-                                frame_time = extract_frame_time(video_file, frame_number)
                             elif trash_detected_time and elapsed_time_trash <= 30:
                                 video_file = os.path.join(save_dir, f"trash_{trash_detected_time.strftime('%Y-%m-%d_%H:%M:%S')}.avi")
-                                frame_time = extract_frame_time(video_file, frame_number)
                             output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
                         output_video_writer.write(blended_frame)
 
-                        if frame_time:
-                            log_date = frame_time.strftime('%Y%m%d')
-                            log_time = frame_time.strftime('%H%M%S')
-                            if banner_detected_time and elapsed_time_banner <= 30:
-                                log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
-                            elif trash_detected_time and elapsed_time_trash <= 30:
-                                log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
+                        if banner_detected_time and elapsed_time_banner <= 30:
+                            log_date = banner_detected_time.strftime('%Y%m%d')
+                            log_time = banner_detected_time.strftime('%H%M%S')
+                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
                             requests.post(st.secrets.address.address + '/log/upload', json=log_data)
-                        # if banner_detected_time and elapsed_time_banner <= 30:
-                        #         log_date = banner_detected_time.strftime('%Y%m%d')
-                        #         log_time = banner_detected_time.strftime('%H%M%S')
-                        #         # log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
-                        # elif trash_detected_time and elapsed_time_trash <= 30:
-                        #     log_date = trash_detected_time.strftime('%Y%m%d')
-                        #     log_time = trash_detected_time.strftime('%H%M%S')
-                        #     # log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
-
-
-                        # requests.post(st.secrets.address.address + '/log/upload', json=log_data)
+                            log_sent_banner = True
+                        elif trash_detected_time and elapsed_time_trash <= 30:
+                            log_date = trash_detected_time.strftime('%Y%m%d')
+                            log_time = trash_detected_time.strftime('%H%M%S')
+                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
+                            requests.post(st.secrets.address.address + '/log/upload', json=log_data)
+                            log_sent_trash = True
+                            
                     else:
                         saving = False
                         banner_detected_time = None
                         trash_detected_time = None
+                        log_sent_banner = False
+                        log_sent_trash = False
                         if output_video_writer is not None:
                             output_video_writer.release()
                             output_video_writer = None
@@ -211,26 +206,6 @@ def frame_processor(stop_event):
                     result_queue.get()
                 result_queue.put(blended_frame)
         stop_event.set()
-
-def extract_frame_time(video_path, frame_number):
-    cap = cv2.VideoCapture(video_path)
-    
-    if not cap.isOpened():
-        print("비디오 파일을 열 수 없습니다.")
-        return None
-    
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    if frame_number < 0 or frame_number >= total_frames:
-        print("잘못된 프레임 번호입니다.")
-        return None
-    
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-    
-    frame_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
-    frame_time = datetime.timedelta(milliseconds=frame_time_ms)
-    
-    cap.release()
-    return frame_time
 
 def process():
     global saving
