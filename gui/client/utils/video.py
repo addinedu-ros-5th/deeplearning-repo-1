@@ -16,17 +16,21 @@ object_model = load_yolo_model('models/best_last.pt')
 
 sequence_length = 10
 sequence = []
-start_save_time = None
-saving_duration = 30
+
 saving = False
+
 frame_queue = Queue(maxsize=10)
 result_queue = Queue(maxsize=10)
 flag_queue = Queue(maxsize=10)
+
 banner_detected_time = None
 trash_detected_time = None
 
+log_sent_banner = False
+log_sent_trash = False
 
 save_dir = "videos/"
+
 def preprocess_frame(frame):
     results = pose_model(frame, conf = 0.8)
     if not results or not results[0].keypoints or len(results[0].keypoints.xy[0]) == 0:
@@ -36,10 +40,12 @@ def preprocess_frame(frame):
         keypoints = keypoints[0].cpu().numpy()
         keypoints_flat = keypoints.flatten()
     return keypoints_flat
+
 def is_overlapping(box1, box2):
     x1_min, y1_min, x1_max, y1_max = box1
     x2_min, y2_min, x2_max, y2_max = box2
     return not (x1_max < x2_min or x1_min > x2_max or y1_max < y2_min or y1_min > y2_max)
+
 def predict_with_model1(frame):
     person_boxes = []
     action = None
@@ -67,6 +73,7 @@ def predict_with_model1(frame):
             for box in result.boxes.xyxy:
                 person_boxes.append(box.tolist())
     return frame, person_boxes, action
+
 def predict_with_model2(frame, person_boxes, person_flags, action):
     results = object_model(frame, conf=0.8)
     for result in results:
@@ -87,6 +94,7 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
                     if is_overlapping([x1, y1, x2, y2], person_box) and action == 'Banner':
                         person_flags[i] = "near_banner"
                         break
+                    
     for i in range(len(person_flags)):
         if person_flags[i] in ['holding_trash', 'near_banner']:
             continue
@@ -114,7 +122,8 @@ def predict_with_model2(frame, person_boxes, person_flags, action):
             color = (0, 255, 0)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame, person_flags
-video_path = 'videos/20240603_140411.mp4'
+
+video_path = 'videos/2024-06-03_140411.mp4'
 
 def frame_reader(stop_event):
     cap = cv2.VideoCapture(video_path)
@@ -130,16 +139,17 @@ def frame_reader(stop_event):
         time.sleep(frame_time)
     cap.release()
     stop_event.set()
+
 def frame_processor(stop_event):
     global saving
     global banner_detected_time
     global output_video_writer
     global trash_detected_time
+    global log_sent_banner
+    global log_sent_trash
 
     output_video_writer = None
     person_flags = []
-    log_sent_banner = False
-    log_sent_trash = False
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while not stop_event.is_set():
@@ -182,6 +192,7 @@ def frame_processor(stop_event):
                             log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
                             requests.post(st.secrets.address.address + '/log/upload', json=log_data)
                             log_sent_banner = True
+
                         elif trash_detected_time and elapsed_time_trash <= 30:
                             log_date = trash_detected_time.strftime('%Y%m%d')
                             log_time = trash_detected_time.strftime('%H%M%S')
@@ -223,6 +234,7 @@ def process():
             frame_count += 1
         else:
             time.sleep(0.01)
+
     stop_event.set()
     reader_thread.join()
     processor_thread.join()
