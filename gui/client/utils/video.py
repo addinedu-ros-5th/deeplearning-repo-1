@@ -24,6 +24,10 @@ result_queue = Queue(maxsize=10)
 flag_queue = Queue(maxsize=10)
 banner_detected_time = None
 trash_detected_time = None
+
+log_sent_banner = False
+log_sent_trash = False
+
 save_dir = "videos/"
 def preprocess_frame(frame):
     results = pose_model(frame, conf = 0.8)
@@ -134,8 +138,12 @@ def frame_processor(stop_event):
     global banner_detected_time
     global output_video_writer
     global trash_detected_time
+    global log_sent_banner
+    global log_sent_trash
+
     output_video_writer = None
     person_flags = []
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while not stop_event.is_set():
             if not frame_queue.empty():
@@ -148,6 +156,7 @@ def frame_processor(stop_event):
                 result2, person_flags = future2.result()
                 alpha = 0.5
                 blended_frame = cv2.addWeighted(result1, alpha, result2, 1 - alpha, 0)
+
                 if "near_banner" in person_flags and not saving:
                     flag_queue.put("banner_person_detected")
                     banner_detected_time = datetime.now()
@@ -168,13 +177,22 @@ def frame_processor(stop_event):
                             output_video_writer = cv2.VideoWriter(video_file, cv2.VideoWriter_fourcc(*'XVID'), 30, (frame.shape[1], frame.shape[0]))
                         output_video_writer.write(blended_frame)
                         if banner_detected_time and elapsed_time_banner <= 30:
-                            log_date = banner_detected_time.strftime('%Y%m%d')
-                            log_time = banner_detected_time.strftime('%H%M%S')
-                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
-                        elif trash_detected_time and elapsed_time_trash <= 30:
-                            log_date = trash_detected_time.strftime('%Y%m%d')
-                            log_time = trash_detected_time.strftime('%H%M%S')
-                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
+                            if not log_sent_banner:
+                                log_date = banner_detected_time.strftime('%Y%m%d')
+                                log_time = banner_detected_time.strftime('%H%M%S')
+                                log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
+                                log_sent_banner = True
+                            elif elapsed_time_banner > 30:
+                                log_sent_banner =False
+
+                        if trash_detected_time and elapsed_time_trash <= 30:
+                            if not log_sent_trash:
+                                log_date = trash_detected_time.strftime('%Y%m%d')
+                                log_time = trash_detected_time.strftime('%H%M%S')
+                                log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
+                                log_sent_trash = True
+                            elif elapsed_time_trash > 30:
+                                log_sent_trash = False
                         requests.post(st.secrets.address.address + '/log/upload', json=log_data)
                     else:
                         saving = False
