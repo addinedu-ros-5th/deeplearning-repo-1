@@ -1,7 +1,9 @@
+import os
 import time
 import requests
 import pandas as pd
 import streamlit as st
+from moviepy.editor import VideoFileClip
 
 from http import HTTPStatus
 from utils.file import find_file
@@ -160,8 +162,24 @@ class Page:
                 with self.video:
                     row = event.selection['rows']
                     if len(row) > 0:
-                        file_name = st.session_state.df.index[row[0]]
-                        st.video(find_file(file_name)[0])
+                        date = st.session_state.df.index[row[0]]
+                        time = st.session_state.df['시간'][row[0]]
+                        action = None
+
+                        if st.session_state.df['행위'][row[0]] == '무단 투기':
+                            action = 'trash'
+                        elif st.session_state.df['행위'][row[0]] == '현수막':
+                            action = 'banner'
+
+                        if not find_file(date, time, action, 'mp4'):
+                            input = find_file(date, time, action, 'avi')[0]
+                            output = os.path.splitext(input)[0] + '.mp4'
+
+                            clip = VideoFileClip(input)
+                            clip.write_videofile(output, codec='libx264')
+
+
+                        st.video(find_file(date, time, action, 'mp4')[0])
 
     def apply(self, start_date, end_date, sections=None, actions=None):
         if 'df' in st.session_state:
