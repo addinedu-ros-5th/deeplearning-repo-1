@@ -26,9 +26,6 @@ flag_queue = Queue(maxsize=10)
 banner_detected_time = None
 trash_detected_time = None
 
-log_sent_banner = False
-log_sent_trash = False
-
 save_dir = "videos/"
 
 def preprocess_frame(frame):
@@ -140,13 +137,25 @@ def frame_reader(stop_event):
     cap.release()
     stop_event.set()
 
+def send_log(section, action):
+    now = datetime.now()
+    log_date = now.strftime("%Y-%m-%d")
+    log_time = now.strftime("%H:%M:%S")
+
+    log_data = {
+        'date': log_date,
+        'time': log_time,
+        'section': section,
+        'action': action
+    }
+
+    requests.post(st.secrets.address.address + '/log/upload', json=log_data)
+
 def frame_processor(stop_event):
     global saving
     global banner_detected_time
     global output_video_writer
     global trash_detected_time
-    global log_sent_banner
-    global log_sent_trash
 
     output_video_writer = None
     person_flags = []
@@ -168,12 +177,12 @@ def frame_processor(stop_event):
                     flag_queue.put("banner_person_detected")
                     banner_detected_time = datetime.now()
                     saving = True
-                    log_sent_banner = False
+                    send_log("A", "현수막")
                 elif "holding_trash" in person_flags and not saving:
                     flag_queue.put("trash_person_detected")
                     trash_detected_time = datetime.now()
                     saving = True
-                    log_sent_trash = False
+                    send_log("A", "무단 투기")
                 if saving:
                     elapsed_time_banner = (datetime.now() - banner_detected_time).total_seconds() if banner_detected_time else float('inf')
                     elapsed_time_trash = (datetime.now() - trash_detected_time).total_seconds() if trash_detected_time else float('inf')
@@ -189,23 +198,15 @@ def frame_processor(stop_event):
                         if banner_detected_time and elapsed_time_banner <= 30:
                             log_date = banner_detected_time.strftime('%Y%m%d')
                             log_time = banner_detected_time.strftime('%H%M%S')
-                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "현수막"}
-                            requests.post(st.secrets.address.address + '/log/upload', json=log_data)
-                            log_sent_banner = True
 
                         elif trash_detected_time and elapsed_time_trash <= 30:
                             log_date = trash_detected_time.strftime('%Y%m%d')
                             log_time = trash_detected_time.strftime('%H%M%S')
-                            log_data = {'date': log_date, 'time': log_time, 'section': "A", 'action': "무단 투기"}
-                            requests.post(st.secrets.address.address + '/log/upload', json=log_data)
-                            log_sent_trash = True
                             
                     else:
                         saving = False
                         banner_detected_time = None
                         trash_detected_time = None
-                        log_sent_banner = False
-                        log_sent_trash = False
                         if output_video_writer is not None:
                             output_video_writer.release()
                             output_video_writer = None
@@ -217,6 +218,8 @@ def frame_processor(stop_event):
                     result_queue.get()
                 result_queue.put(blended_frame)
         stop_event.set()
+
+
 
 def process():
     global saving
