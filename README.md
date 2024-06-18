@@ -22,8 +22,8 @@
 |:---|:---|:---|
 |강지연|팀장|GUI - CCTV Page 구현, GIT 관리|
 |조성현|팀원|GUI - LOG Page 구현, 웹서버 구축|
-|김요한|팀원|Action model v1, Object model v0, v0.1 구현|
-|신재훈|팀원|Action model v0, Object model v1 구현, 발표|
+|김요한|팀원|Action v1, Object v0, Process 구현|
+|신재훈|팀원|Action v0, Object v1 구현, 발표|
 |조성오|팀원|데이터 라벨링, 시나리오 구성, 협업 툴 관리|
 
 ### 1.4 시연 영상
@@ -35,7 +35,7 @@
 
 
 ### 2.2 시스템구성도
-![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/163802905/a1c962f0-e7a0-49f7-bdb6-c559a9e13f77)
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/8f03b198-dee2-423e-93ad-aea61d9e038a)
 
 
 
@@ -43,3 +43,44 @@
 
 ## 3. 모델 설계
 
+### 3.1 시행착오
+|모델|방식|교훈|
+|:---|:---|:---|
+|action v0|mediapipe, LSTM|데이터 선정 및 전처리 중요성|
+|object v0|labelme, YOLO-detect|모델 성능 개선 필요|
+|object v0.1|YOLO-pose와 YOLO-detect|action 모델 필요|
+
+## 3.2 최종 모델
+
+### Action v1
+
+#### 데이터 전처리
+
+![Screenshot from 2024-06-17 16-27-41](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/d6b6da03-bea5-4113-b254-e2860c994140)
+
+
+#### 모델 학습
+
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/5e9c2440-c979-4c2f-a54e-8173adbc04d5)
+
+
+#### 모델 평가
+
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/2f4624c7-aad0-4667-85a4-dda690b95ce2)
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/42a887f8-70a8-40e5-b8a2-0c009dbb4a15)
+
+
+### Object v1
+
+#### 데이터 전처리
+
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/f5ab6f30-df98-4cf4-8439-ec8a77485fc2)
+
+#### 모델 학습
+
+![image-20240606-135248](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/4259be38-b05c-49a4-aa28-30a864999b63)
+![image-20240606-135227](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/ee3fadad-7431-43c0-95e8-f10fd3bc0f6b)
+#### 모델 평가
+
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/fb546458-001f-4b26-be54-ea6f3bac16b9)
+![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/45cd42bf-a5e1-428e-b6f8-8bcdc5c804a5)
