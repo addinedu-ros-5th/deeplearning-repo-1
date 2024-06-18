@@ -22,8 +22,8 @@
 |:---|:---|:---|
 |강지연|팀장|GUI - CCTV Page 구현, GIT 관리|
 |조성현|팀원|GUI - LOG Page 구현, 웹서버 구축|
-|김요한|팀원|Action model v1, Object model v0, v0.1 구현|
-|신재훈|팀원|Action model v0, Object model v1 구현, 발표|
+|김요한|팀원|Action v1, Object v0, Process 구현|
+|신재훈|팀원|Action v0, Object v1 구현, 발표|
 |조성오|팀원|데이터 라벨링, 시나리오 구성, 협업 툴 관리|
 
 ### 1.4 시연 영상
@@ -42,4 +42,35 @@
 
 
 ## 3. 모델 설계
+
+### 3.1 시행착오
+|모델|방식|교훈|
+|:---|:---|:---|
+|action v0|mediapipe, LSTM|데이터 선정 및 전처리 중요성|
+|object v0|labelme, YOLO-detect|모델 성능 개선 필요|
+|object v0.1|YOLO-pose와 YOLO-detect|action 모델 필요|
+
+## 3.2 최종 모델
+
+### Action v1
+#### 데이터 전처리
+![alt text](image-3.png)
+
+#### 모델 학습
+![alt text](image-6.png)
+
+#### 모델 평가
+![alt text](image-7.png)
+
+### Object v1
+
+#### 데이터 전처리
+![alt text](image.png)
+
+#### 모델 학습
+
+
+#### 모델 평가
+![alt text](image-1.png)
+![alt text](image-2.png)
 
