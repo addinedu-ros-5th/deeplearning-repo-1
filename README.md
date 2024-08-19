@@ -3,7 +3,8 @@
 ## 1.프로젝트 개요
 
 ### 1.1 주제 소개
-시설 관리 보조 시스템
+행위와 객체 인식 기반 단지 내 시설물 관리 보조 시스템
+
 ### 1.2 기술 스택
 |||
 |:---|:---|
@@ -26,7 +27,6 @@
 |신재훈|팀원|Action v0, Object v1 구현, 발표|
 |조성오|팀원|데이터 라벨링, 시나리오 구성, 협업 툴 관리|
 
-### 1.4 시연 영상
 
 ## 2. 프로젝트 설계
 
@@ -36,7 +36,6 @@
 
 ### 2.2 시스템구성도
 ![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/8f03b198-dee2-423e-93ad-aea61d9e038a)
-
 
 
 
@@ -84,3 +83,7 @@
 
 ![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/fb546458-001f-4b26-be54-ea6f3bac16b9)
 ![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/45cd42bf-a5e1-428e-b6f8-8bcdc5c804a5)
+
+## 4. 프로젝트 시연
+
+
