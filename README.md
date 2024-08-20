@@ -84,6 +84,19 @@
 ![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/fb546458-001f-4b26-be54-ea6f3bac16b9)
 ![image](https://github.com/addinedu-ros-5th/deeplearning-repo-1/assets/86091697/45cd42bf-a5e1-428e-b6f8-8bcdc5c804a5)
 
-## 4. 프로젝트 시연
+## 4. 기능 구현
+
+### 4.1 회원가입
+
+![스크린샷 2024-08-20 113414](https://github.com/user-attachments/assets/30a2db6c-5257-4003-88e6-a13a74f393f9)
+![스크린샷 2024-08-20 113455](https://github.com/user-attachments/assets/9dfe2cc4-4c34-458d-9fd8-eb0bebf0f8da)
+
+### 4.2 CCTV
+
+### 4.3 LOG
+
+
+
+
 
 
