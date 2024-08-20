@@ -92,8 +92,10 @@
 ![스크린샷 2024-08-20 113455](https://github.com/user-attachments/assets/9dfe2cc4-4c34-458d-9fd8-eb0bebf0f8da)
 
 ### 4.2 CCTV
+[![CCTV](https://github.com/user-attachments/assets/72b27688-d57f-4454-8ce7-12b56f020836)](https://youtu.be/PMdGgQNTO7w)
 
 ### 4.3 LOG
+[![LOG](https://github.com/user-attachments/assets/b9c15a3e-3f9e-4f88-97fa-66cb12f43429)](https://youtu.be/vaGUQwEG-Zw)
 
 
 
